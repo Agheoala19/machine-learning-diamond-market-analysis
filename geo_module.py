@@ -4,7 +4,6 @@ import pandas as pd
 from shapely.geometry import Point
 
 def display_geo_analysis():
-    # Centrele logistice și comerciale globale de diamante
     hubs_data = {
         'City': ['Antwerp', 'Mumbai', 'New York', 'Dubai', 'Tel Aviv', 'Gaborone'],
         'Country': ['Belgium', 'India', 'USA', 'UAE', 'Israel', 'Botswana'],
@@ -14,40 +13,44 @@ def display_geo_analysis():
     }
 
     df_hubs = pd.DataFrame(hubs_data)
-
-    # Creare GeoDataFrame folosind Shapely Point
     geometry = [Point(xy) for xy in zip(df_hubs['Longitude'], df_hubs['Latitude'])]
-    geo_df = gpd.GeoDataFrame(df_hubs, geometry=geometry, crs="EPSG:4346")
+    geo_df = gpd.GeoDataFrame(df_hubs, geometry=geometry, crs="EPSG:4326")
 
-    # Generare hartă
     fig, ax = plt.subplots(figsize=(12, 6))
-    
-    # Harta de fundal a lumii
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-    world.plot(ax=ax, color='#e0e0e0', edgecolor='#ffffff')
 
-    # Reprezentarea punctelor logistice proporțional cu importanța comercială
+    # Încărcare hartă a lumii via URL public stabil
+    world_url = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson"
+    try:
+        world = gpd.read_file(world_url)
+        world.plot(ax=ax, color='#e9ecef', edgecolor='#adb5bd')
+    except Exception:
+        # Fallback dacă rețeaua e blocată
+        ax.set_facecolor('#f8f9fa')
+        ax.grid(True, linestyle='--', alpha=0.5)
+
+    # Plotare centre logistice
     geo_df.plot(
         ax=ax,
-        markersize=geo_df['Market_Share_Pct'] * 15,
-        color='#d90429',
-        alpha=0.7,
+        markersize=geo_df['Market_Share_Pct'] * 25,
+        color='#e63946',
+        alpha=0.8,
         edgecolor='black'
     )
 
-    # Etichete pentru fiecare hub
     for _, row in geo_df.iterrows():
         ax.annotate(
             text=f"{row['City']} ({row['Market_Share_Pct']}%)",
             xy=(row['Longitude'], row['Latitude']),
-            xytext=(4, 4),
+            xytext=(5, 5),
             textcoords="offset points",
             fontsize=9,
             fontweight='bold',
-            color='#1a1a1a'
+            color='#1d3557'
         )
 
     ax.set_title("Distribuția Principalelor Hub-uri Comerciale și Logistice de Diamante", fontsize=13, pad=12)
+    ax.set_xlim(-180, 180)
+    ax.set_ylim(-60, 85)
     ax.set_axis_off()
     fig.tight_layout()
 
